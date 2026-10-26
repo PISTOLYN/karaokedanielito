@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/Karaoke.Core/Karaoke.Core.csproj" />
+  <Project Path="src/Karaoke.App/Karaoke.App.csproj" />
+  <Project Path="tests/Karaoke.Core.Tests/Karaoke.Core.Tests.csproj" />
+</Solution>
