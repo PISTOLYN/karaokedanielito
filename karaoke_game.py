@@ -366,6 +366,11 @@ class Game:
         self.pages, self.sel, self.scroll, self.song_edit = ["main"], 0, 0, 0
         self.editing, self.rebinding = None, None
 
+        # --- CONTROL DE VOLUMEN GLOBAL ---
+        self.volumen_global = self.cfg.get("volumen_global", 80)
+        self.slider_rect = pygame.Rect(W - 400, H - 80, 200, 15)
+        self.arrastrando_slider = False
+
     # ---------------------------------------------------------- recursos
     def read_img(self, path, cover_size=None, fit_size=None):
         try:
@@ -515,7 +520,7 @@ class Game:
     def play_sound(self, path, announce):
         try:
             self._snd = pygame.mixer.Sound(str(path))
-            self._snd.set_volume(self.cfg["volumen_voz"] / 100)
+            self._snd.set_volume(self.volumen_global / 100) # CAMBIO: usar el volumen global
             self.voice_ch.play(self._snd)
             if not announce:
                 self.voice_len = self._snd.get_length()
@@ -588,6 +593,21 @@ class Game:
             self.handle_game(e)
 
     def handle_game(self, e):
+        # --- NUEVO: Manejar clics y arrastre en el Slider de Volumen ---
+        if e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            if self.slider_rect.inflate(40, 30).collidepoint(e.pos):
+                self.arrastrando_slider = True
+                self.actualizar_volumen(e.pos[0])
+                return
+        elif e.type == pygame.MOUSEBUTTONUP and e.button == 1:
+            if self.arrastrando_slider:
+                self.arrastrando_slider = False
+                return
+        elif e.type == pygame.MOUSEMOTION:
+            if self.arrastrando_slider:
+                self.actualizar_volumen(e.pos[0])
+                return
+
         if e.type != pygame.KEYDOWN:
             return
         k, name, t = e.key, pygame.key.name(e.key), self.cfg["teclas"]
@@ -837,6 +857,21 @@ class Game:
                 self.activate(rows[self.sel][1])
 
     # ---------------------------------------------------------- actualizar
+    def actualizar_volumen(self, mouse_x):
+        rel_x = mouse_x - self.slider_rect.x
+        porcentaje = max(0.0, min(1.0, rel_x / self.slider_rect.w))
+        self.volumen_global = int(porcentaje * 100)
+        
+        # Guardar en la configuración y actualizar volúmenes del juego
+        self.cfg["volumen_musica"] = self.volumen_global
+        self.cfg["volumen_voz"] = self.volumen_global
+        save_config(self.cfg)
+        
+        if pygame.mixer.music.get_busy():
+            pygame.mixer.music.set_volume(self.volumen_global / 100.0)
+        if self._snd:
+            self._snd.set_volume(self.volumen_global / 100.0)
+
     def update(self, dt):
         try:
             while True:
@@ -858,7 +893,7 @@ class Game:
         if speaking and not self.announcing:  # el temporizador solo corre mientras Alexa lee el texto
             self.timer += dt
         if music:
-            pygame.mixer.music.set_volume(self.cfg["volumen_musica"] / 100 * (0.25 if speaking else 1.0))
+            pygame.mixer.music.set_volume((self.volumen_global / 100.0) * (0.25 if speaking else 1.0))
         for t in ("rojo", "azul"):  # marcador que cuenta hacia arriba
             diff, step = self.scores[t] - self.disp[t], 14 * dt
             self.disp[t] = self.scores[t] if abs(diff) <= step else self.disp[t] + math.copysign(step, diff)
@@ -993,6 +1028,41 @@ class Game:
             pygame.draw.rect(g, (255, 235, 120, a), g.get_rect(), border_radius=sx(45))
             s.blit(g, lab.topleft)
 
+    def draw_volume_slider(self):
+        # Dibujar el ícono de bocina
+        icon_rect = pygame.Rect(self.slider_rect.x - 35, self.slider_rect.centery - 15, 25, 30)
+        pygame.draw.polygon(self.screen, BLANCO, [
+            (icon_rect.left, icon_rect.centery - 5),
+            (icon_rect.left + 8, icon_rect.centery - 5),
+            (icon_rect.left + 15, icon_rect.centery - 12),
+            (icon_rect.left + 15, icon_rect.centery + 12),
+            (icon_rect.left + 8, icon_rect.centery + 5),
+            (icon_rect.left, icon_rect.centery + 5)
+        ])
+        if self.volumen_global > 0:
+            pygame.draw.arc(self.screen, BLANCO, (icon_rect.left + 15, icon_rect.centery - 8, 12, 16), -1, 1, 2)
+            if self.volumen_global > 50:
+                pygame.draw.arc(self.screen, BLANCO, (icon_rect.left + 15, icon_rect.centery - 12, 20, 24), -1, 1, 2)
+
+        # Dibujar barra de fondo (gris oscuro)
+        pygame.draw.rect(self.screen, (80, 80, 80), self.slider_rect, border_radius=8)
+        
+        # Calcular posición del tirador
+        porcentaje = self.volumen_global / 100.0
+        knob_x = self.slider_rect.x + int(self.slider_rect.w * porcentaje)
+        
+        # Dibujar barra rellena (color verde)
+        if knob_x > self.slider_rect.x:
+            fill_rect = pygame.Rect(self.slider_rect.x, self.slider_rect.y, knob_x - self.slider_rect.x, self.slider_rect.h)
+            pygame.draw.rect(self.screen, (70, 230, 120), fill_rect, border_radius=8)
+
+        # Dibujar tirador (círculo blanco)
+        pygame.draw.circle(self.screen, BLANCO, (knob_x, self.slider_rect.centery), 10)
+        pygame.draw.circle(self.screen, (150, 150, 150), (knob_x, self.slider_rect.centery), 10, 2)
+        
+        # Texto del porcentaje
+        self.text(f"{self.volumen_global}%", 18, BLANCO, topleft=(self.slider_rect.right + 10, self.slider_rect.y - 2))
+
     def draw_stage_text(self):
         area = RC(*TEXT_AREA)
         sg = self.song()
@@ -1055,6 +1125,9 @@ class Game:
         self.draw_stage_text()
         self.draw_hud(speaking)
         self.draw_popup()
+        
+        self.draw_volume_slider() # <--- NUEVO: Dibujar el slider de volumen
+
         if self.toast_t > 0:
             r = pygame.Rect(0, 0, self.f[24].size(self.toast_msg)[0] + 40, 36)
             r.center = (W // 2, sx(330))
