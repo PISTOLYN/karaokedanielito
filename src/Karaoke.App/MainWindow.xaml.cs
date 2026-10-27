@@ -19,7 +19,6 @@ namespace Karaoke.App;
 
 public partial class MainWindow : Window
 {
-    /// <summary>Etapa 2: audio real. Con false, un botón sin archivo válido no suena y avisa en el panel.</summary>
     private const bool DemoMode = false;
     private readonly NAudioPlaybackFactory _playback;
     private double _dispL, _dispR;
@@ -74,12 +73,9 @@ public partial class MainWindow : Window
     }
 
     // ------------------------------------------------------------ NUEVO: Control de Volumen
-    
     private void SliderVolumen_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (e == null) return;
-        
-        // Asignamos el valor al volumen maestro de la fábrica de audio.
         NAudioPlaybackFactory.MasterVolume = (float)e.NewValue;
     }
 
@@ -192,8 +188,6 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) { _log.Error("archivos", $"No se pudo cargar el logotipo {path}", ex); }
     }
-
-    // ------------------------------------------------------------ acciones del conductor
 
     private void OnVoice(VoiceButtonConfig cfg)
     {
