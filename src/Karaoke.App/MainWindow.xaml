@@ -177,7 +177,7 @@
 
                     <!-- Frase / pregunta actual -->
                     <Border Margin="170,14,170,0" Background="#EEF0F4" CornerRadius="4">
-                        <Viewbox Margin="6,2"><TextBlock x:Name="PanelTitle" Text="ADIVINA LA CANCION....." FontFamily="Impact" Foreground="#E01010"/></Viewbox>
+                        <Canvas x:Name="MarqueeHost" ClipToBounds="True"><TextBlock x:Name="PanelTitle" Text="ADIVINA LA CANCION....." FontFamily="Impact" FontSize="34" Foreground="#E01010"/></Canvas>
                     </Border>
 
                     <!-- Texto largo (instrucciones, avisos) -->
@@ -186,6 +186,29 @@
                         <TextBlock x:Name="PanelBody" TextWrapping="Wrap" TextAlignment="Center" Foreground="White"
                                    FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="34" Padding="28"/>
                     </Border>
+
+                    <!-- Ventana de calificación (estilo contador de rockola) -->
+                    <Viewbox x:Name="RatingOverlay" Grid.Row="1" Visibility="Collapsed" Margin="80,10,80,50" Stretch="Uniform">
+                        <Border Width="560" Height="380" CornerRadius="24" BorderThickness="6" BorderBrush="#FFD23C" Background="#F00A0420">
+                            <Grid Margin="16">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="CALIFICACIÓN" FontFamily="Impact" FontSize="30" Foreground="#FFD23C" HorizontalAlignment="Center"/>
+                                <Border Grid.Row="1" Background="Black" BorderBrush="#7A0000" BorderThickness="4" CornerRadius="10" Margin="0,8">
+                                    <Viewbox Margin="10"><TextBlock x:Name="RatingNumber" Text="0" FontFamily="Consolas" FontWeight="Bold" Foreground="#FF2A2A"/></Viewbox>
+                                </Border>
+                                <TextBlock x:Name="RatingPhrase" Grid.Row="2" TextWrapping="Wrap" TextAlignment="Center" Foreground="White"
+                                           FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="22" MinHeight="60"/>
+                                <Grid Grid.Row="3" Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="RatingHint" Foreground="#FFD23C" FontFamily="Segoe UI" FontSize="15" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Style="{StaticResource NeonBtn}" Content="CERRAR" Background="#555" Width="110" Height="34" Click="RatingClose_Click"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Viewbox>
 
                     <!-- Logotipos reemplazables (Configuración > Logotipos, etapa 3) -->
                     <Grid Grid.RowSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,16,0,0" Width="170" Height="170">
@@ -267,12 +290,15 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <UniformGrid Grid.Row="1" Columns="3">
+                <UniformGrid Grid.Row="1" Columns="4">
                     <Button x:Name="BtnInstr" Style="{StaticResource NeonBtn}" Content="INSTRUCCIONES&#10;DEL JUEGO" Foreground="#FFE600" Click="Instructions_Click">
                         <Button.Background><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#C050F0" Offset="0"/><GradientStop Color="#7A10B8" Offset="1"/></LinearGradientBrush></Button.Background>
                     </Button>
                     <Button x:Name="BtnCel1" Style="{StaticResource NeonBtn}" Content="CELEBRACION" Tag="1" Foreground="#143A00" Click="Celebration_Click"/>
                     <Button x:Name="BtnCel2" Style="{StaticResource NeonBtn}" Content="CELEBRACION" Tag="2" Foreground="#143A00" Click="Celebration_Click"/>
+                    <Button x:Name="BtnResetBuzzers" Style="{StaticResource NeonBtn}" Content="REINICIAR&#10;PULSADORES" Foreground="#143A00" BorderBrush="#EAFF9A" Click="ResetBuzzers_Click">
+                        <Button.Background><LinearGradientBrush StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#D2F54A" Offset="0"/><GradientStop Color="#7CC81C" Offset="1"/></LinearGradientBrush></Button.Background>
+                    </Button>
                 </UniformGrid>
             </Grid>
 

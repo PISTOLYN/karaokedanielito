@@ -124,6 +124,18 @@ public class ScoreboardTests
         Assert.True(s.UndoLast());
         Assert.Equal(1, s.Red); Assert.Equal(0, s.Blue);
     }
+    [Fact] public void AddPoints_AddsAmount_AndUndoRevertsWholeAmount()
+    {
+        var s = new Scoreboard(); s.AddPoints(Team.Blue, 7); s.AddPoints(Team.Blue, 3);
+        Assert.Equal(10, s.Blue);
+        Assert.True(s.UndoLast());
+        Assert.Equal(7, s.Blue);
+    }
+    [Fact] public void AddPoints_ZeroOrNegative_DoesNothing()
+    {
+        var s = new Scoreboard(); s.AddPoints(Team.Red, 0); s.AddPoints(Team.Red, -3);
+        Assert.Equal(0, s.Red); Assert.False(s.UndoLast());
+    }
     [Fact] public void Undo_OnEmpty_ReturnsFalse() => Assert.False(new Scoreboard().UndoLast());
     [Fact] public void Reset_ZerosBoth()
     {

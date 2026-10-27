@@ -68,6 +68,8 @@ public partial class MainWindow : Window
         HeaderName.Text = _settings.AssistantName + "...";
         _tick.Tick += OnTick;
         _tick.Start();
+        InitBuzzers();
+        InitExtras();
         _log.Info("app", "Iniciado (etapa 2, audio real)");
     }
 
@@ -201,7 +203,7 @@ public partial class MainWindow : Window
         RoundNumber.Text = cfg.RoundNumber.ToString();
         HeaderName.Text = _settings.AssistantName + "...";
         HeaderSub.Text = cfg.HeaderText;
-        SetPanel(cfg.PanelText);
+        SetPanel(cfg.PanelText, cfg.SpokenText);   // la frase que dice la voz también se escribe en pantalla
         // Misma ronda mientras corre → no reinicia el contador (lo garantiza RoundTimer)
         _timer.Start("R" + cfg.RoundNumber, cfg.TimeSeconds > 0 ? cfg.TimeSeconds : _settings.DefaultRoundSeconds);
     }
@@ -244,8 +246,8 @@ public partial class MainWindow : Window
             SetPanel("No se pudo reproducir la celebración (ver registro)");
     }
 
-    private void PointRed_Click(object sender, RoutedEventArgs e) => _score.AddPoint(Team.Red);
-    private void PointBlue_Click(object sender, RoutedEventArgs e) => _score.AddPoint(Team.Blue);
+    private void PointRed_Click(object sender, RoutedEventArgs e) => GivePoints(Team.Red);
+    private void PointBlue_Click(object sender, RoutedEventArgs e) => GivePoints(Team.Blue);
 
     private void Pause_Click(object sender, RoutedEventArgs e) => _audio.TogglePause();
 
@@ -253,6 +255,8 @@ public partial class MainWindow : Window
     {
         _audio.StopAll();
         _timer.Cancel();
+        EndTurn();
+        CancelRating();
         // Pendiente en etapas siguientes: cancelar animación de calificación y turno activo de pulsadores.
         SetPanel("TODO DETENIDO");
         _log.Info("app", "DETENER TODO");
@@ -265,7 +269,7 @@ public partial class MainWindow : Window
         _audio.Toggle(AudioChannel.Voice, "INSTR", "tts:" + text); // segunda pulsación: detiene la lectura
     }
 
-    private void Rate_Click(object sender, RoutedEventArgs e) => ShowPending("Calificación", 4);
+    private void Rate_Click(object sender, RoutedEventArgs e) => StartRating();
 
     private void Pending_Click(object sender, RoutedEventArgs e)
     {
@@ -286,7 +290,7 @@ public partial class MainWindow : Window
         RefreshAudioState();
         HeaderName.Text = _settings.AssistantName + "...";
         LoadLogos();
-        SetPanel("Configuración guardada");
+        SetPanel(_settings.MarqueeText);
     }
 
     private void ClearPalette_Click(object sender, RoutedEventArgs e)
@@ -312,6 +316,8 @@ public partial class MainWindow : Window
             if (!Confirm("¿Cerrar el programa?")) { e.Cancel = true; return; }
             _exitConfirmed = true;
         }
+        DisposeBuzzers();
+        CancelRating();
         _audio.StopAll();
         _timer.Cancel();
         SaveSettings(showMessage: false);
@@ -397,6 +403,7 @@ public partial class MainWindow : Window
     private void SetPanel(string title, string? body = null)
     {
         PanelTitle.Text = title;
+        RestartMarquee();
         PanelBody.Text = body ?? "";
         PanelBodyBorder.Visibility = string.IsNullOrEmpty(body) ? Visibility.Collapsed : Visibility.Visible;
     }
@@ -421,6 +428,7 @@ public partial class MainWindow : Window
         BtnPause.Content = _audio.IsPaused ? "▶" : "⏸";
 
         var musicKey = _audio.ActiveKey(AudioChannel.Music);
+        UpdateMusicClock(musicKey);
         if (musicKey != null && int.TryParse(musicKey.AsSpan(1), out int id))
             DisplayNow.Text = _palette.Music.FirstOrDefault(m => m.Id == id)?.Title ?? "(Ninguno)";
         else
@@ -438,7 +446,9 @@ public partial class MainWindow : Window
         TimerBar.Value = _timer.Progress;
 
         var now = DateTime.Now;
-        DisplayClock.Text = now.ToString("HH:mm:ss");
+        DisplayClock.Text = now.ToString("HH:mm:ss");   // 24 horas
+        var played = _musicSw.Elapsed;
+        DisplayElapsed.Text = $"{(int)played.TotalMinutes:00}:{played.Seconds:00}";
         var date = now.ToString("dddd\nd 'de' MMMM 'de' yyyy", _es);
         DisplayDate.Text = char.ToUpper(date[0], _es) + date[1..];
 

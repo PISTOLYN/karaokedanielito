@@ -89,6 +89,18 @@ public sealed class ConfigWindow : Window
         var f = new StackPanel { Margin = new Thickness(14) };
         AddText(f, "Nombre del asistente de voz", _s.AssistantName, t => _s.AssistantName = t);
         AddInt(f, "Tiempo de ronda por defecto (segundos)", _s.DefaultRoundSeconds, n => _s.DefaultRoundSeconds = n);
+        AddText(f, "Mensaje que corre en la barra blanca del panel central", _s.MarqueeText, t => _s.MarqueeText = t);
+
+        var speak = new CheckBox { Content = "La calificación también dice la frase en voz alta", IsChecked = _s.SpeakRatingPhrase, Margin = new Thickness(0, 12, 0, 0) };
+        speak.Click += (_, _) => _s.SpeakRatingPhrase = speak.IsChecked == true;
+        f.Children.Add(speak);
+        AddText(f, "Frases de calificación (una por línea; agrega todas las que quieras)",
+                string.Join(Environment.NewLine, _s.RatingPhrases),
+                t =>
+                {
+                    var lines = t.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (lines.Length > 0) _s.RatingPhrases = lines.ToList();
+                }, true);
 
         var cb = new CheckBox { Content = "Pulsadores habilitados (cambia qué instrucciones se muestran)", IsChecked = _s.BuzzersEnabled, Margin = new Thickness(0, 12, 0, 0) };
         cb.Click += (_, _) => _s.BuzzersEnabled = cb.IsChecked == true;

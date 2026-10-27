@@ -9,6 +9,7 @@ public sealed class AppSettings
     public string ActivePaletteName { get; set; } = "";
     public List<string> RatingPhrases { get; set; } = new();
     public bool SpeakRatingPhrase { get; set; }
+    public string MarqueeText { get; set; } = "ADIVINA LA CANCION.....";
     public bool BuzzersEnabled { get; set; }
     public string InstructionsWithBuzzers { get; set; } = DefaultInstructionsWithBuzzers;
     public string InstructionsWithoutBuzzers { get; set; } = DefaultInstructionsWithoutBuzzers;
@@ -61,5 +62,6 @@ public sealed class AppSettings
         if (!Palettes.Any(p => p.Name == ActivePaletteName)) ActivePaletteName = Palettes[0].Name;
         if (RatingPhrases.Count == 0) RatingPhrases.AddRange(DefaultRatingPhrases);
         if (DefaultRoundSeconds <= 0) DefaultRoundSeconds = 30;
+        if (string.IsNullOrWhiteSpace(MarqueeText)) MarqueeText = "ADIVINA LA CANCION.....";
     }
 }
