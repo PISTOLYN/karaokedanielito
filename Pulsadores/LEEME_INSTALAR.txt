@@ -1,0 +1,23 @@
+INSTALAR EL PULSADOR (3 archivos en src/Karaoke.App)
+
+1. Sube a GitHub, en la carpeta src/Karaoke.App (Add file > Upload files):
+     BuzzerGamepad.cs        (nuevo)
+     MainWindow.Buzzers.cs   (nuevo)
+     MainWindow.xaml.cs      (reemplaza al actual; solo se anadieron 3 lineas)
+
+2. BORRA de src/Karaoke.App estos archivos duplicados (sobran y pueden causar errores raros):
+     AudioCoordinator.cs        (copia vieja; la buena esta en src/Karaoke.Core/Audio)
+     SilentPlaybackFactory.cs
+     KaraokeInteractivo.slnx
+     README.md
+
+3. En el programa: Configuracion > General > marca "Pulsadores habilitados".
+
+4. Prueba: pulsa F9 (modo prueba) y presiona un boton del pulsador; el panel muestra su numero.
+   Boton 0 = rojo, boton 1 = azul. Si tu pulsador usa otros numeros, cambia
+   RedButtonIndex / BlueButtonIndex en MainWindow.Buzzers.cs.
+
+SI TU MainWindow.xaml.cs LOCAL ES DISTINTO AL DE GITHUB: no lo reemplaces. Anade a mano 3 lineas:
+   - en el constructor, justo despues de  _tick.Start();      ->  InitBuzzers();
+   - en StopAll_Click, despues de  _timer.Cancel();            ->  EndTurn();
+   - en Window_Closing, justo antes del  _audio.StopAll();  que va despues de la confirmacion  ->  DisposeBuzzers();
