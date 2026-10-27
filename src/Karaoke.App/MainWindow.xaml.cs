@@ -73,6 +73,16 @@ public partial class MainWindow : Window
         _log.Info("app", "Iniciado (etapa 2, audio real)");
     }
 
+    // ------------------------------------------------------------ NUEVO: Control de Volumen
+    
+    private void SliderVolumen_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (e == null) return;
+        
+        // Asignamos el valor al volumen maestro de la fábrica de audio.
+        NAudioPlaybackFactory.MasterVolume = (float)e.NewValue;
+    }
+
     // ------------------------------------------------------------ construcción de la botonera
 
     private Style Btn => (Style)FindResource("NeonBtn");
@@ -91,7 +101,6 @@ public partial class MainWindow : Window
 
     private void BuildButtons()
     {
-        // Quitar los botones de la paleta anterior (conservando los de celebración, que viven en el XAML)
         foreach (var k in _buttons.Keys.Where(k => k[0] != 'C').ToList()) _buttons.Remove(k);
         ButtonGrid.Children.Clear();
 
@@ -100,7 +109,6 @@ public partial class MainWindow : Window
         var whiteBorder = (Brush)new SolidColorBrush(Color.FromRgb(0xA0, 0xA0, 0xA0));
         var red = (Brush)new SolidColorBrush(Color.FromRgb(0xE0, 0x10, 0x20));
 
-        // Orden de la imagen: fila 1 voces 1-9, fila 2 canciones 1-9, fila 3 voces 10-18, fila 4 canciones 10-18
         for (int row = 0; row < 4; row++)
         {
             for (int col = 0; col < 9; col++)
@@ -123,7 +131,6 @@ public partial class MainWindow : Window
             }
         }
 
-        // Celebraciones (botones definidos en el XAML)
         var celBg = Gradient("#D2F54A", "#7CC81C");
         var celBorder = (Brush)new SolidColorBrush(Color.FromRgb(0xEA, 0xFF, 0x9A));
         foreach (var (btn, id) in new[] { (BtnCel1, 1), (BtnCel2, 2), (BtnCel3, 3), (BtnCel4, 4) })
@@ -198,13 +205,12 @@ public partial class MainWindow : Window
         }
         var r = _audio.Toggle(AudioChannel.Voice, "V" + cfg.Id, source);
         if (r == ToggleResult.Blocked) { SetPanel("No se pudo reproducir la voz (ver registro)"); return; }
-        if (r != ToggleResult.Started) return; // Stopped: solo detiene la voz; no toca el temporizador
+        if (r != ToggleResult.Started) return;
 
         RoundNumber.Text = cfg.RoundNumber.ToString();
         HeaderName.Text = _settings.AssistantName + "...";
         HeaderSub.Text = cfg.HeaderText;
-        SetPanel(cfg.PanelText, cfg.SpokenText);   // la frase que dice la voz también se escribe en pantalla
-        // Misma ronda mientras corre → no reinicia el contador (lo garantiza RoundTimer)
+        SetPanel(cfg.PanelText, cfg.SpokenText);
         _timer.Start("R" + cfg.RoundNumber, cfg.TimeSeconds > 0 ? cfg.TimeSeconds : _settings.DefaultRoundSeconds);
     }
 
@@ -232,7 +238,6 @@ public partial class MainWindow : Window
 
     private void Celebration_Click(object sender, RoutedEventArgs e)
     {
-        // El Tag de estos botones guarda el color de borde, así que el id se obtiene por la clave registrada ("C1".."C4")
         string key = _buttons.First(kv => ReferenceEquals(kv.Value, sender)).Key;
         int id = int.Parse(key.Substring(1));
         var cfg = _palette.Celebrations.FirstOrDefault(c => c.Id == id);
@@ -257,7 +262,6 @@ public partial class MainWindow : Window
         _timer.Cancel();
         EndTurn();
         CancelRating();
-        // Pendiente en etapas siguientes: cancelar animación de calificación y turno activo de pulsadores.
         SetPanel("TODO DETENIDO");
         _log.Info("app", "DETENER TODO");
     }
@@ -266,7 +270,7 @@ public partial class MainWindow : Window
     {
         string text = _settings.BuzzersEnabled ? _settings.InstructionsWithBuzzers : _settings.InstructionsWithoutBuzzers;
         SetPanel("INSTRUCCIONES", text);
-        _audio.Toggle(AudioChannel.Voice, "INSTR", "tts:" + text); // segunda pulsación: detiene la lectura
+        _audio.Toggle(AudioChannel.Voice, "INSTR", "tts:" + text);
     }
 
     private void Rate_Click(object sender, RoutedEventArgs e) => StartRating();
@@ -338,8 +342,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // ------------------------------------------------------------ paletas
-
     private void RefreshPaletteList()
     {
         _updatingList = true;
@@ -353,7 +355,7 @@ public partial class MainWindow : Window
         if (_updatingList || PaletteList.SelectedItem is not string name) return;
         var p = _settings.Palettes.FirstOrDefault(x => x.Name == name);
         if (p == null || ReferenceEquals(p, _palette)) return;
-        _audio.StopAll(); // cambiar de paleta en pleno show corta el audio de la anterior
+        _audio.StopAll();
         _timer.Cancel();
         _palette = p;
         BuildButtons();
@@ -368,8 +370,6 @@ public partial class MainWindow : Window
     }
     private void PrevPalette_Click(object sender, RoutedEventArgs e) => MovePalette(-1);
     private void NextPalette_Click(object sender, RoutedEventArgs e) => MovePalette(+1);
-
-    // ------------------------------------------------------------ pantalla completa
 
     private void Fullscreen_Click(object sender, RoutedEventArgs e) => ToggleFullscreen();
 
@@ -397,8 +397,6 @@ public partial class MainWindow : Window
         if (e.Key == Key.F11) { ToggleFullscreen(); e.Handled = true; }
         else if (e.Key == Key.Escape && _fullscreen) { ToggleFullscreen(); e.Handled = true; }
     }
-
-    // ------------------------------------------------------------ refresco de la interfaz
 
     private void SetPanel(string title, string? body = null)
     {
@@ -446,19 +444,17 @@ public partial class MainWindow : Window
         TimerBar.Value = _timer.Progress;
 
         var now = DateTime.Now;
-        DisplayClock.Text = now.ToString("HH:mm:ss");   // 24 horas
+        DisplayClock.Text = now.ToString("HH:mm:ss");
         var played = _musicSw.Elapsed;
         DisplayElapsed.Text = $"{(int)played.TotalMinutes:00}:{played.Seconds:00}";
         var date = now.ToString("dddd\nd 'de' MMMM 'de' yyyy", _es);
         DisplayDate.Text = char.ToUpper(date[0], _es) + date[1..];
 
-        // Ecualizador junto al asistente: solo se mueve mientras habla la voz
         bool speaking = _audio.IsActive(AudioChannel.Voice);
         double max = Math.Max(16, EqPanel.ActualHeight * 0.9);
         foreach (var bar in _eqBars)
             bar.Height = speaking ? 8 + _rng.NextDouble() * (max - 8) : 8;
 
-        // Medidores L/R: nivel pico real de los archivos que suenan (la voz de Windows no se mide)
         var (l, r) = _playback.GetLevels();
         _dispL = Math.Max(l, _dispL * 0.85);
         _dispR = Math.Max(r, _dispR * 0.85);
