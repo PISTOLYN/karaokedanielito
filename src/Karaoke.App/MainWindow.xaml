@@ -6,7 +6,6 @@
         Background="#05030F" WindowStartupLocation="CenterScreen"
         KeyDown="Window_KeyDown" Closing="Window_Closing">
     <Window.Resources>
-        <!-- Botón base: texto escalable (Viewbox), sin foco para que la barra espaciadora no dispare botones en vivo -->
         <Style x:Key="NeonBtn" TargetType="Button">
             <Setter Property="FontFamily" Value="Impact"/>
             <Setter Property="Foreground" Value="White"/>
@@ -68,7 +67,7 @@
             <RowDefinition Height="235*"/>
         </Grid.RowDefinitions>
 
-        <!-- ============ FILA 0: equipos, asistente, tiempo ============ -->
+        <!-- FILA 0: equipos, asistente, tiempo -->
         <Grid Grid.Row="0" Margin="10,8,10,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="360*"/>
@@ -77,7 +76,6 @@
                 <ColumnDefinition Width="380*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Equipo rojo -->
             <Border x:Name="RedPanel" Grid.Column="0" CornerRadius="16" BorderThickness="4"
                     BorderBrush="#FF6BA0" Background="#D81B5B" Margin="2">
                 <Grid Margin="10,6">
@@ -93,7 +91,6 @@
                 </Grid>
             </Border>
 
-            <!-- Encabezado del asistente -->
             <Border Grid.Column="1" CornerRadius="26" BorderThickness="4" BorderBrush="#2DA8FF"
                     Background="#0A1A4A" Margin="6,2">
                 <Grid Margin="10,6">
@@ -123,7 +120,6 @@
                 </Grid>
             </Border>
 
-            <!-- Tiempo -->
             <Grid Grid.Column="2" Margin="10,0">
                 <Grid.RowDefinitions><RowDefinition Height="1*"/><RowDefinition Height="2*"/></Grid.RowDefinitions>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -143,7 +139,6 @@
                 </Grid>
             </Grid>
 
-            <!-- Equipo azul -->
             <Border x:Name="BluePanel" Grid.Column="3" CornerRadius="16" BorderThickness="4"
                     BorderBrush="#4DB8FF" Background="#0B3F9E" Margin="2">
                 <Grid Margin="10,6">
@@ -160,10 +155,9 @@
             </Border>
         </Grid>
 
-        <!-- ============ FILA 1: panel central + medidores L/R ============ -->
+        <!-- FILA 1: panel central -->
         <Grid Grid.Row="1" Margin="10,2,10,4">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="46"/></Grid.ColumnDefinitions>
-
             <Border CornerRadius="60" BorderThickness="8" BorderBrush="#FFB800" ClipToBounds="True">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -174,20 +168,14 @@
                 </Border.Background>
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="1*"/><RowDefinition Height="7*"/></Grid.RowDefinitions>
-
-                    <!-- Frase / pregunta actual -->
                     <Border Margin="170,14,170,0" Background="#EEF0F4" CornerRadius="4">
                         <Canvas x:Name="MarqueeHost" ClipToBounds="True"><TextBlock x:Name="PanelTitle" Text="ADIVINA LA CANCION....." FontFamily="Impact" FontSize="34" Foreground="#E01010"/></Canvas>
                     </Border>
-
-                    <!-- Texto largo (instrucciones, avisos) -->
                     <Border x:Name="PanelBodyBorder" Grid.Row="1" Margin="140,20,140,40" Background="#C0000000"
                             CornerRadius="22" Visibility="Collapsed" VerticalAlignment="Center">
                         <TextBlock x:Name="PanelBody" TextWrapping="Wrap" TextAlignment="Center" Foreground="White"
                                    FontFamily="Segoe UI" FontWeight="SemiBold" FontSize="34" Padding="28"/>
                     </Border>
-
-                    <!-- Ventana de calificación (estilo contador de rockola) -->
                     <Viewbox x:Name="RatingOverlay" Grid.Row="1" Visibility="Collapsed" Margin="80,10,80,50" Stretch="Uniform">
                         <Border Width="560" Height="380" CornerRadius="24" BorderThickness="6" BorderBrush="#FFD23C" Background="#F00A0420">
                             <Grid Margin="16">
@@ -209,8 +197,6 @@
                             </Grid>
                         </Border>
                     </Viewbox>
-
-                    <!-- Logotipos reemplazables (Configuración > Logotipos, etapa 3) -->
                     <Grid Grid.RowSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,16,0,0" Width="170" Height="170">
                         <TextBlock x:Name="LogoLeftText" Text="LOGO&#10;IZQUIERDO" TextAlignment="Center" Foreground="#80FFFFFF"
                                    VerticalAlignment="Center" HorizontalAlignment="Center" FontFamily="Impact" FontSize="22"/>
@@ -223,8 +209,6 @@
                     </Grid>
                 </Grid>
             </Border>
-
-            <!-- Medidores estéreo L / R (se alimentan con el nivel real en la etapa 6) -->
             <Border Grid.Column="1" Background="#101010" Margin="4,0,0,0" BorderBrush="#555" BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -242,10 +226,10 @@
             </Border>
         </Grid>
 
-        <!-- ============ FILA 2: botonera 9 x 4 (se genera en código) ============ -->
+        <!-- FILA 2: botonera -->
         <UniformGrid x:Name="ButtonGrid" Grid.Row="2" Rows="4" Columns="9" Margin="10,0"/>
 
-        <!-- ============ FILA 3: controles inferiores ============ -->
+        <!-- FILA 3: controles inferiores -->
         <Grid Grid.Row="3" Margin="10,4,10,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1130*"/>
@@ -253,7 +237,6 @@
                 <ColumnDefinition Width="680*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Paletas -->
             <Grid Grid.Column="0" Margin="0,0,6,0">
                 <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="36"/></Grid.RowDefinitions>
                 <Grid>
@@ -265,15 +248,23 @@
                     </UniformGrid>
                     <ListBox x:Name="PaletteList" Grid.Column="1" Margin="3" FontSize="16" SelectionChanged="PaletteList_SelectionChanged"/>
                 </Grid>
+                
+                <!-- AQUÍ ESTÁ EL CONTROL DE VOLUMEN -->
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <Button Style="{StaticResource FlatBtn}" Width="150" Content="Configuración" Click="Config_Click" Tag="0"/>
                     <Button Style="{StaticResource FlatBtn}" Width="150" Content="Paleta Anterior" Click="PrevPalette_Click"/>
                     <Button Style="{StaticResource FlatBtn}" Width="150" Content="Paleta Siguiente" Click="NextPalette_Click"/>
                     <Button x:Name="BtnFullscreen" Style="{StaticResource NeonBtn}" Width="60" Background="#32E632" Foreground="#6A00B0" Content="⛶" FontFamily="Segoe UI Symbol" Click="Fullscreen_Click"/>
+                    
+                    <TextBlock Text="🔊" Foreground="White" FontSize="20" VerticalAlignment="Center" Margin="15,0,10,0"/>
+                    <Slider x:Name="SliderVolumen" Width="130" Minimum="0" Maximum="1" Value="0.8" 
+                            VerticalAlignment="Center" ValueChanged="SliderVolumen_ValueChanged" 
+                            IsMoveToPointEnabled="True"/>
+                    <TextBlock Text="{Binding ElementName=SliderVolumen, Path=Value, StringFormat={}{0:P0}}" 
+                               Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Width="50"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Pantalla negra + instrucciones + celebraciones 1 y 2 -->
             <Grid Grid.Column="1" Margin="0,0,6,0">
                 <Grid.RowDefinitions><RowDefinition Height="3*"/><RowDefinition Height="2*"/></Grid.RowDefinitions>
                 <Border Background="Black" BorderBrush="#444" BorderThickness="1" Margin="3">
@@ -302,7 +293,6 @@
                 </UniformGrid>
             </Grid>
 
-            <!-- Celebraciones 3 y 4, PUNTO, CALIFICAR, pausa, salir, detener todo -->
             <UniformGrid Grid.Column="2" Rows="2" Columns="4">
                 <Button x:Name="BtnCel3" Style="{StaticResource NeonBtn}" Content="CELEBRACION" Tag="3" Foreground="#143A00" Click="Celebration_Click"/>
                 <Button x:Name="BtnPointRed" Style="{StaticResource NeonBtn}" Content="PUNTO" Background="#E81818" Foreground="#FFE600" Click="PointRed_Click"/>
