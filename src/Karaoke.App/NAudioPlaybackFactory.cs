@@ -21,6 +21,23 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
 
     public NAudioPlaybackFactory(IAppLogger log) { _log = log; }
 
+    // ------------------------------------------------------------ volumen general (0..1)
+    // Se aplica a los archivos de audio y a la voz sintética, tanto a lo que ya suena como a lo que empiece después.
+
+    private static float _masterVolume = 0.8f;
+    private static event Action<float>? MasterVolumeChanged;
+
+    public static float MasterVolume
+    {
+        get => _masterVolume;
+        set
+        {
+            float v = Math.Clamp(value, 0f, 1f);
+            _masterVolume = v;
+            MasterVolumeChanged?.Invoke(v);
+        }
+    }
+
     /// <summary>Nombre de la voz en español usada, o null si no hay ninguna instalada.</summary>
     public string? SpanishVoice { get { EnsureVoice(); return _spanishVoice; } }
 
@@ -84,13 +101,14 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
             _owner = owner;
             try
             {
-                _reader = new AudioFileReader(path);
+                _reader = new AudioFileReader(path) { Volume = MasterVolume };
                 var meter = new MeteringSampleProvider(_reader, Math.Max(1, _reader.WaveFormat.SampleRate / 20));
                 meter.StreamVolume += OnVolume;
                 _out = new WaveOutEvent();
                 _out.Init(meter);
                 _out.PlaybackStopped += OnStopped;
                 lock (owner._gate) owner._files.Add(this);
+                MasterVolumeChanged += ApplyMaster;
                 _out.Play();
             }
             catch
@@ -98,6 +116,11 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
                 Dispose();
                 throw;
             }
+        }
+
+        private void ApplyMaster(float v)
+        {
+            try { if (_reader != null) _reader.Volume = v; } catch { }
         }
 
         private void OnVolume(object? sender, StreamVolumeEventArgs e)
@@ -138,6 +161,7 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
             if (_disposed) return;
             _disposed = true;
             _l = _r = 0;
+            MasterVolumeChanged -= ApplyMaster;
             lock (_owner._gate) _owner._files.Remove(this);
             try { if (_out != null) _out.PlaybackStopped -= OnStopped; } catch { }
             try { _out?.Dispose(); } catch { }
@@ -156,11 +180,18 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
         public SpeechHandle(string text, string? voiceName, IAppLogger log)
         {
             _synth = new SpeechSynthesizer();
+            try { _synth.Volume = (int)Math.Round(MasterVolume * 100); } catch { }
+            MasterVolumeChanged += ApplyMaster;
             try { if (voiceName != null) _synth.SelectVoice(voiceName); }
             catch (Exception ex) { log.Warn("voz", "No se pudo seleccionar la voz '" + voiceName + "': " + ex.Message); }
             _synth.SetOutputToDefaultAudioDevice();
             _synth.SpeakCompleted += (_, _) => { if (!_stopped) Finished?.Invoke(this, EventArgs.Empty); };
             _synth.SpeakAsync(text);
+        }
+
+        private void ApplyMaster(float v)
+        {
+            try { if (_synth != null) _synth.Volume = (int)Math.Round(v * 100); } catch { }
         }
 
         public void Stop()
@@ -175,6 +206,7 @@ public sealed class NAudioPlaybackFactory : IPlaybackFactory
         public void Dispose()
         {
             _stopped = true;
+            MasterVolumeChanged -= ApplyMaster;
             try { _synth?.Dispose(); } catch { }
             _synth = null;
         }

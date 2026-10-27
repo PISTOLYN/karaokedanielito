@@ -67,7 +67,7 @@ namespace Karaoke.App
             {
                 // Si esta silenciado, se guarda el nivel anterior para no arrancar mudo.
                 double v = SliderVolumen.Value > 0 ? SliderVolumen.Value : _volAntesMute;
-                Directory.CreateDirectory(Path.GetDirectoryName(_volArchivo));
+                Directory.CreateDirectory(Path.GetDirectoryName(_volArchivo)!);
                 File.WriteAllText(_volArchivo, v.ToString("0.###", CultureInfo.InvariantCulture));
             }
             catch { /* no es critico */ }
