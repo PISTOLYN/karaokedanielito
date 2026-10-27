@@ -4,7 +4,7 @@
         Title="Karaoke Interactivo — Daniel León"
         Width="1280" Height="820" MinWidth="960" MinHeight="620"
         Background="#05030F" WindowStartupLocation="CenterScreen"
-        KeyDown="Window_KeyDown" Closing="Window_Closing">
+        KeyDown="Window_KeyDown" Closing="Window_Closing" Loaded="VolumenWindow_Loaded">
     <Window.Resources>
         <Style x:Key="NeonBtn" TargetType="Button">
             <Setter Property="FontFamily" Value="Impact"/>
@@ -157,7 +157,7 @@
 
         <!-- FILA 1 -->
         <Grid Grid.Row="1" Margin="10,2,10,4">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="46"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="92"/></Grid.ColumnDefinitions>
             <Border CornerRadius="60" BorderThickness="8" BorderBrush="#FFB800" ClipToBounds="True">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -209,21 +209,50 @@
                     </Grid>
                 </Grid>
             </Border>
-            <Border Grid.Column="1" Background="#101010" Margin="4,0,0,0" BorderBrush="#555" BorderThickness="1">
-                <Grid>
-                    <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                    <Grid Margin="3">
-                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                        <Border x:Name="MeterHostL" Background="#262626" Margin="1"><Rectangle x:Name="MeterL" VerticalAlignment="Bottom" Height="0" Fill="LimeGreen"/></Border>
-                        <Border x:Name="MeterHostR" Grid.Column="1" Background="#262626" Margin="1"><Rectangle x:Name="MeterR" VerticalAlignment="Bottom" Height="0" Fill="LimeGreen"/></Border>
+
+            <!-- MEDIDOR L/R + VOLUMEN GENERAL -->
+            <Grid Grid.Column="1" Margin="4,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="46"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="#101010" BorderBrush="#555" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <Grid Margin="3">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <Border x:Name="MeterHostL" Background="#262626" Margin="1"><Rectangle x:Name="MeterL" VerticalAlignment="Bottom" Height="0" Fill="LimeGreen"/></Border>
+                            <Border x:Name="MeterHostR" Grid.Column="1" Background="#262626" Margin="1"><Rectangle x:Name="MeterR" VerticalAlignment="Bottom" Height="0" Fill="LimeGreen"/></Border>
+                        </Grid>
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                            <TextBlock Text="L" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="R" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        </Grid>
                     </Grid>
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                        <TextBlock Text="L" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="R" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center"/>
+                </Border>
+
+                <Border Grid.Column="1" Margin="3,0,0,0" Background="#101010" BorderBrush="#555" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0"
+                                   Text="{Binding ElementName=SliderVolumen, Path=Value, StringFormat={}{0:P0}}"
+                                   Foreground="White" FontSize="11" FontWeight="Bold"
+                                   HorizontalAlignment="Center" Margin="0,4,0,4"/>
+                        <Slider x:Name="SliderVolumen" Grid.Row="1" Orientation="Vertical"
+                                Minimum="0" Maximum="1" Value="0.8" HorizontalAlignment="Center"
+                                IsMoveToPointEnabled="True" ValueChanged="SliderVolumen_ValueChanged"/>
+                        <Button x:Name="BtnMute" Grid.Row="2" Style="{StaticResource FlatBtn}"
+                                Content="🔊" FontFamily="Segoe UI Emoji" Height="34" Margin="3"
+                                ToolTip="Silenciar / activar sonido" Click="Mute_Click"/>
                     </Grid>
-                </Grid>
-            </Border>
+                </Border>
+            </Grid>
         </Grid>
 
         <!-- FILA 2 -->
@@ -254,13 +283,6 @@
                     <Button Style="{StaticResource FlatBtn}" Width="150" Content="Paleta Anterior" Click="PrevPalette_Click"/>
                     <Button Style="{StaticResource FlatBtn}" Width="150" Content="Paleta Siguiente" Click="NextPalette_Click"/>
                     <Button x:Name="BtnFullscreen" Style="{StaticResource NeonBtn}" Width="60" Background="#32E632" Foreground="#6A00B0" Content="⛶" FontFamily="Segoe UI Symbol" Click="Fullscreen_Click"/>
-                    
-                    <TextBlock Text="🔊" Foreground="White" FontSize="20" VerticalAlignment="Center" Margin="15,0,10,0"/>
-                    <Slider x:Name="SliderVolumen" Width="130" Minimum="0" Maximum="1" Value="0.8" 
-                            VerticalAlignment="Center" ValueChanged="SliderVolumen_ValueChanged" 
-                            IsMoveToPointEnabled="True"/>
-                    <TextBlock Text="{Binding ElementName=SliderVolumen, Path=Value, StringFormat={}{0:P0}}" 
-                               Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" Width="50"/>
                 </StackPanel>
             </Grid>
 

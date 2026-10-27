@@ -1,0 +1,18 @@
+VOLUMEN GENERAL - Karaoke Desafio Musical
+==========================================
+
+1. Haz una copia de tu src/Karaoke.App/MainWindow.xaml por si acaso.
+2. Descomprime este zip en la raiz de tu repositorio (misma carpeta que "src").
+   Se reemplaza MainWindow.xaml y se agrega MainWindow.Volumen.cs.
+3. Compila (si tu .csproj es estilo SDK, el .cs nuevo se incluye solo).
+
+Que cambia:
+- El slider de volumen pasa de la fila de abajo al lado del medidor L/R (vertical).
+- Boton de bocina debajo del slider: clic = silenciar / volver al nivel anterior.
+- El icono cambia: silencio, bajo, medio, alto.
+- El volumen se guarda al cerrar en %AppData%\KaraokeDesafio\volumen.txt.
+
+Importante:
+- Sigue usando tu SliderVolumen_ValueChanged de MainWindow.xaml.cs (no se toca).
+  El volumen general solo mueve el sonido que ese metodo aplique.
+- No se agrego nada a Window_KeyDown, para no chocar con tus teclas.
