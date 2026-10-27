@@ -11,6 +11,17 @@ public sealed class AppSettings
     public bool SpeakRatingPhrase { get; set; }
     public string MarqueeText { get; set; } = "ADIVINA LA CANCION.....";
     public bool BuzzersEnabled { get; set; }
+
+    // Pulsadores de los equipos. Dispositivo -1 = cualquier dispositivo USB. Botones numerados desde 0 (igual que el modo prueba F9).
+    public int RedBuzzerDevice { get; set; } = -1;
+    public int RedBuzzerButton { get; set; } = 0;
+    public int BlueBuzzerDevice { get; set; } = -1;
+    public int BlueBuzzerButton { get; set; } = 1;
+    public string? RedBuzzerSound { get; set; }      // sonido opcional cuando gana el turno el equipo rojo
+    public string? BlueBuzzerSound { get; set; }     // sonido opcional cuando gana el turno el equipo azul
+    public bool BuzzerSpeakTurn { get; set; } = true;     // la voz dice "¡Turno para el equipo ...!"
+    public bool BuzzerAwardsPoint { get; set; } = true;   // el pulsador suma 1 punto al equipo que gana el turno
+    public int BuzzerLockSeconds { get; set; }            // 0 = turno bloqueado hasta REINICIAR PULSADORES o DETENER TODO
     public string InstructionsWithBuzzers { get; set; } = DefaultInstructionsWithBuzzers;
     public string InstructionsWithoutBuzzers { get; set; } = DefaultInstructionsWithoutBuzzers;
     public int DefaultRoundSeconds { get; set; } = 30;
@@ -62,6 +73,11 @@ public sealed class AppSettings
         if (!Palettes.Any(p => p.Name == ActivePaletteName)) ActivePaletteName = Palettes[0].Name;
         if (RatingPhrases.Count == 0) RatingPhrases.AddRange(DefaultRatingPhrases);
         if (DefaultRoundSeconds <= 0) DefaultRoundSeconds = 30;
+        RedBuzzerDevice = Math.Clamp(RedBuzzerDevice, -1, 15);
+        BlueBuzzerDevice = Math.Clamp(BlueBuzzerDevice, -1, 15);
+        RedBuzzerButton = Math.Clamp(RedBuzzerButton, 0, 31);
+        BlueBuzzerButton = Math.Clamp(BlueBuzzerButton, 0, 31);
+        if (BuzzerLockSeconds < 0) BuzzerLockSeconds = 0;
         if (string.IsNullOrWhiteSpace(MarqueeText)) MarqueeText = "ADIVINA LA CANCION.....";
     }
 }

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Karaoke.Core.Models;
 using Microsoft.Win32;
 
@@ -14,6 +15,9 @@ public sealed class ConfigWindow : Window
 {
     private const string AudioFilter = "Audio|*.mp3;*.wav;*.wma;*.m4a;*.aac;*.ogg;*.flac|Todos los archivos|*.*";
     private const string ImageFilter = "Imágenes|*.png;*.jpg;*.jpeg;*.bmp;*.gif|Todos los archivos|*.*";
+
+    /// <summary>Lector de pulsadores de la ventana principal; lo asigna MainWindow.InitBuzzers. Sirve para detectar qué botón se presiona al asignarlo.</summary>
+    public static BuzzerGamepad? Gamepad { get; set; }
 
     private readonly AppSettings _s;
     private readonly Palette _p;
@@ -32,7 +36,8 @@ public sealed class ConfigWindow : Window
         tabs.Items.Add(new TabItem { Header = "Música (blancos)", Content = BuildMusicTab() });
         tabs.Items.Add(new TabItem { Header = "Celebraciones (verdes)", Content = BuildCelebrationTab() });
         tabs.Items.Add(new TabItem { Header = "General", Content = BuildGeneralTab() });
-        tabs.SelectedIndex = Math.Clamp(startTab, 0, 3);
+        tabs.Items.Add(new TabItem { Header = "Pulsadores (equipos)", Content = BuildBuzzerTab() });
+        tabs.SelectedIndex = Math.Clamp(startTab, 0, tabs.Items.Count - 1);
 
         var close = new Button
         {
@@ -102,14 +107,166 @@ public sealed class ConfigWindow : Window
                     if (lines.Length > 0) _s.RatingPhrases = lines.ToList();
                 }, true);
 
-        var cb = new CheckBox { Content = "Pulsadores habilitados (cambia qué instrucciones se muestran)", IsChecked = _s.BuzzersEnabled, Margin = new Thickness(0, 12, 0, 0) };
-        cb.Click += (_, _) => _s.BuzzersEnabled = cb.IsChecked == true;
-        f.Children.Add(cb);
-
+        // "Pulsadores habilitados" ahora está en la pestaña "Pulsadores (equipos)".
         AddText(f, "Instrucciones con pulsadores", _s.InstructionsWithBuzzers, t => _s.InstructionsWithBuzzers = t, true);
         AddText(f, "Instrucciones sin pulsadores", _s.InstructionsWithoutBuzzers, t => _s.InstructionsWithoutBuzzers = t, true);
         AddFile(f, "Logotipo izquierdo", _s.LogoLeftPath, ImageFilter, p => _s.LogoLeftPath = p);
         AddFile(f, "Logotipo derecho", _s.LogoRightPath, ImageFilter, p => _s.LogoRightPath = p);
+        return new ScrollViewer { Content = f };
+    }
+
+    private UIElement BuildBuzzerTab()
+    {
+        var f = new StackPanel { Margin = new Thickness(14) };
+
+        var enabled = new CheckBox
+        {
+            Content = "Pulsadores habilitados (si se desactivan, se ignoran y se muestran las instrucciones sin pulsadores)",
+            IsChecked = _s.BuzzersEnabled
+        };
+        enabled.Click += (_, _) => _s.BuzzersEnabled = enabled.IsChecked == true;
+        f.Children.Add(enabled);
+
+        f.Children.Add(new TextBlock
+        {
+            Margin = new Thickness(0, 10, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+            Text = "El primer equipo que presione su pulsador gana el turno: suena su sonido, su cuadro parpadea y el pulsador del otro equipo " +
+                   "queda inhabilitado (su cuadro se atenúa) hasta que presiones REINICIAR PULSADORES o DETENER TODO."
+        });
+
+        var monitor = new TextBlock { Margin = new Thickness(0, 10, 0, 0), Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap };
+        var status = new TextBlock { Margin = new Thickness(0, 6, 0, 0), FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        var warn = new TextBlock
+        {
+            Margin = new Thickness(0, 6, 0, 0), Foreground = Brushes.Firebrick, FontWeight = FontWeights.SemiBold,
+            TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Collapsed,
+            Text = "⚠ Los dos equipos tienen asignado el mismo pulsador: siempre ganaría el rojo. Asigna un botón distinto a cada equipo."
+        };
+        var redInfo = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        var blueInfo = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+
+        static string Describe(int device, int button) =>
+            device < 0 ? $"cualquier dispositivo, botón {button}" : $"dispositivo {device}, botón {button}";
+
+        void Refresh()
+        {
+            redInfo.Text = "Asignado: " + Describe(_s.RedBuzzerDevice, _s.RedBuzzerButton);
+            blueInfo.Text = "Asignado: " + Describe(_s.BlueBuzzerDevice, _s.BlueBuzzerButton);
+            bool sameButton = _s.RedBuzzerButton == _s.BlueBuzzerButton &&
+                              (_s.RedBuzzerDevice < 0 || _s.BlueBuzzerDevice < 0 || _s.RedBuzzerDevice == _s.BlueBuzzerDevice);
+            warn.Visibility = sameButton ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        Team? learning = null;
+
+        void StartLearn(Team team)
+        {
+            if (Gamepad == null)
+            {
+                status.Text = "No se pudo iniciar el lector de pulsadores USB (revisa el registro).";
+                return;
+            }
+            learning = team;
+            status.Text = $"Presiona ahora el pulsador del equipo {(team == Team.Red ? "ROJO" : "AZUL")}…";
+        }
+
+        Button MakeLearnButton(string text, Team team)
+        {
+            var b = new Button { Content = text, Padding = new Thickness(12, 5, 12, 5), MinWidth = 220 };
+            b.Click += (_, _) => StartLearn(team);
+            return b;
+        }
+
+        Button MakeResetButton(Team team)
+        {
+            var b = new Button { Content = "Valores por defecto", Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(8, 0, 0, 0) };
+            b.Click += (_, _) =>
+            {
+                if (team == Team.Red) { _s.RedBuzzerDevice = -1; _s.RedBuzzerButton = 0; }
+                else { _s.BlueBuzzerDevice = -1; _s.BlueBuzzerButton = 1; }
+                learning = null;
+                status.Text = "";
+                Refresh();
+            };
+            return b;
+        }
+
+        // ---- asignación de los 2 pulsadores
+        AddLabel(f, "Pulsador del EQUIPO ROJO");
+        var redRow = new StackPanel { Orientation = Orientation.Horizontal };
+        redRow.Children.Add(MakeLearnButton("Asignar (presiona el pulsador rojo)", Team.Red));
+        redRow.Children.Add(MakeResetButton(Team.Red));
+        redRow.Children.Add(redInfo);
+        f.Children.Add(redRow);
+
+        AddLabel(f, "Pulsador del EQUIPO AZUL");
+        var blueRow = new StackPanel { Orientation = Orientation.Horizontal };
+        blueRow.Children.Add(MakeLearnButton("Asignar (presiona el pulsador azul)", Team.Blue));
+        blueRow.Children.Add(MakeResetButton(Team.Blue));
+        blueRow.Children.Add(blueInfo);
+        f.Children.Add(blueRow);
+
+        f.Children.Add(status);
+        f.Children.Add(warn);
+        f.Children.Add(monitor);
+        Refresh();
+
+        // Detección en vivo: el evento llega en un hilo de fondo, se pasa al hilo de la interfaz
+        var gp = Gamepad;
+        Action<int, int>? onPress = null;
+        if (gp != null)
+        {
+            monitor.Text = gp.ConnectedCount > 0
+                ? $"Pulsadores USB detectados: {gp.ConnectedCount}. Último botón presionado: (ninguno todavía)"
+                : "No se detecta ningún pulsador USB. Conéctalo y presiona un botón para comprobarlo.";
+            onPress = (device, button) => Dispatcher.BeginInvoke(new Action(() =>
+            {
+                monitor.Text = $"Último botón presionado: dispositivo {device}, botón {button}";
+                if (learning is not Team team) return;
+                if (team == Team.Red) { _s.RedBuzzerDevice = device; _s.RedBuzzerButton = button; }
+                else { _s.BlueBuzzerDevice = device; _s.BlueBuzzerButton = button; }
+                learning = null;
+                status.Text = $"Listo: pulsador del equipo {(team == Team.Red ? "rojo" : "azul")} asignado ({Describe(device, button)}).";
+                Refresh();
+            }));
+            gp.ButtonPressed += onPress;
+            Closed += (_, _) => gp.ButtonPressed -= onPress;
+        }
+        else
+        {
+            monitor.Text = "No se pudo iniciar el lector de pulsadores USB, por eso no se pueden asignar presionando el botón.";
+        }
+
+        // ---- sonidos y comportamiento
+        AddFile(f, "Sonido cuando gana el turno el EQUIPO ROJO (opcional)", _s.RedBuzzerSound, AudioFilter, p => _s.RedBuzzerSound = p);
+        AddFile(f, "Sonido cuando gana el turno el EQUIPO AZUL (opcional)", _s.BlueBuzzerSound, AudioFilter, p => _s.BlueBuzzerSound = p);
+
+        var speak = new CheckBox
+        {
+            Content = "Además, la voz dice «¡Turno para el equipo rojo/azul!» (si no hay sonido asignado, siempre se usa la voz)",
+            IsChecked = _s.BuzzerSpeakTurn, Margin = new Thickness(0, 12, 0, 0)
+        };
+        speak.Click += (_, _) => _s.BuzzerSpeakTurn = speak.IsChecked == true;
+        f.Children.Add(speak);
+
+        var point = new CheckBox
+        {
+            Content = "El pulsador suma 1 punto al equipo que gana el turno",
+            IsChecked = _s.BuzzerAwardsPoint, Margin = new Thickness(0, 8, 0, 0)
+        };
+        point.Click += (_, _) => _s.BuzzerAwardsPoint = point.IsChecked == true;
+        f.Children.Add(point);
+
+        AddInt(f, "Bloqueo automático en segundos (0 = el turno queda bloqueado hasta presionar REINICIAR PULSADORES)",
+               _s.BuzzerLockSeconds, n => _s.BuzzerLockSeconds = n);
+
+        f.Children.Add(new TextBlock
+        {
+            Margin = new Thickness(0, 14, 0, 0), Foreground = Brushes.DimGray, TextWrapping = TextWrapping.Wrap,
+            Text = "Consejo: en la pantalla principal, F9 activa el modo prueba para ver qué botón manda cada pulsador."
+        });
+
         return new ScrollViewer { Content = f };
     }
 

@@ -1,12 +1,23 @@
-ARREGLO DEL ERROR CS0117 (MasterVolume)
-=======================================
+PULSADORES DE LOS EQUIPOS (pestaña nueva en Configuracion)
+==========================================================
 
-Descomprime en la raiz del repositorio (donde esta la carpeta "src") y reemplaza:
-  src/Karaoke.App/NAudioPlaybackFactory.cs   -> ahora tiene MasterVolume (volumen general real)
-  src/Karaoke.App/MainWindow.Volumen.cs      -> quita una advertencia de null
+Descomprime en la raiz del repositorio (donde esta la carpeta "src") y reemplaza 3 archivos:
+  src/Karaoke.App/ConfigWindow.cs           -> pestaña nueva "Pulsadores (equipos)"
+  src/Karaoke.App/MainWindow.Buzzers.cs     -> logica del turno (ganador parpadea, el otro se atenua)
+  src/Karaoke.Core/Models/AppSettings.cs    -> opciones nuevas de pulsadores (se guardan con el resto)
 
-El resto (MainWindow.xaml, MainWindow.xaml.cs) NO se toca.
+Como se usa:
+1. Configuracion -> pestaña "Pulsadores (equipos)" (la ultima).
+2. Marca "Pulsadores habilitados".
+3. Clic en "Asignar (presiona el pulsador rojo)" y presiona el pulsador rojo. Igual con el azul.
+4. Opcional: sonido de cada equipo, si ademas habla la voz, si suma punto, bloqueo automatico.
+5. Guardar y cerrar.
 
-El volumen general afecta a:
-- Canciones, jingles y celebraciones (archivos de audio): al instante, incluso sonando.
-- Voz de Alexa (voz de Windows): se aplica al empezar a hablar.
+En juego:
+- El primero que pulsa gana el turno: suena su sonido, su cuadro parpadea (borde dorado)
+  y el cuadro del otro equipo se atenua y queda inhabilitado.
+- REINICIAR PULSADORES (o DETENER TODO) libera el turno y rehabilita a los dos.
+- Con la ventana de Configuracion abierta los pulsadores no cuentan como jugada.
+
+Nota: "Pulsadores habilitados" se movio de la pestaña General a la pestaña nueva.
+Sin cambios, los valores por defecto son los de antes: rojo = boton 0, azul = boton 1, cualquier dispositivo.
