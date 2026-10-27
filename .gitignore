@@ -1,5 +1,14 @@
-bin/
-obj/
-publish/
-.vs/
-*.user
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec
+.venv/
+venv/
+config.json
+.idea/
+.vscode/
+# carpetas que el juego crea junto al .exe con tus archivos
+pistas/
+voz/
+imagenes/
